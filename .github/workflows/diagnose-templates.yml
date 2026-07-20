@@ -1,0 +1,57 @@
+name: diagnose-templates-stall
+
+# Throwaway diagnostic (do not merge). Attributes the ~37s that the
+# `@nuxt/ui-templates` postinstall (`vite build`) spends on Windows *after* the
+# build reports "built in ~1.4s". Run it on a fork; delete when done.
+
+on:
+  push:
+    branches:
+      - ci/diagnose-templates-stall
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      # setup-vp's default run-install runs the full monorepo install, including the
+      # `@nuxt/ui-templates` postinstall. Its own step timing in the log is baseline #1
+      # (the stall as it happens in real CI).
+      - uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
+        with:
+          node-version: 22
+          cache: true
+
+      - name: Defender / AV status
+        shell: pwsh
+        run: |
+          Get-MpComputerStatus | Select-Object RealTimeProtectionEnabled, AntivirusEnabled, OnAccessProtectionEnabled | Format-List
+
+      - name: Probe — active handles + exit lag (Defender ON)
+        shell: pwsh
+        run: |
+          $t = Measure-Command { node scripts/diagnose-templates-build.mjs 2>&1 | Write-Host }
+          Write-Host "== node harness total wall time (Defender ON): $([math]::Round($t.TotalSeconds, 2))s =="
+
+      - name: Probe — active handles + exit lag (Defender exclusion)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          Write-Host "RealTimeProtection before:" (Get-MpComputerStatus).RealTimeProtectionEnabled
+          try {
+            Add-MpPreference -ExclusionPath "$PWD" -ExclusionProcess "node.exe" -ErrorAction Stop
+            Write-Host "Added Defender exclusions for $PWD and node.exe"
+          } catch {
+            Write-Host "Could not add Defender exclusion (needs admin / tamper protection): $_"
+          }
+          $t = Measure-Command { node scripts/diagnose-templates-build.mjs 2>&1 | Write-Host }
+          Write-Host "== node harness total wall time (exclusion attempted): $([math]::Round($t.TotalSeconds, 2))s =="
