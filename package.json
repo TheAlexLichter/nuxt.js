@@ -10,6 +10,7 @@
   "scripts": {
     "build": "pnpm --filter './packages/**' build",
     "build:stub": "pnpm dev:prepare",
+    "prepare": "pnpm --filter @nuxt/ui-templates build",
     "dev": "pnpm play",
     "dev:prepare": "nuxt prepare",
     "debug:dev": "rm -rf **/node_modules/.cache/jiti && pnpm nuxt dev",

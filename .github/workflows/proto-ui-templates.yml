@@ -1,0 +1,60 @@
+name: proto-ui-templates
+
+# Throwaway prototype (do not merge). Measures the effect of moving the
+# @nuxt/ui-templates build out of its postinstall (which ran during the
+# concurrent install storm) into the root `prepare` script (which pnpm runs
+# after install finishes linking). Expectation on Windows: the build's
+# built->exit tail collapses from ~14-38s to ~2s. Run on a fork.
+
+on:
+  push:
+    branches:
+      - perf/ui-templates-no-postinstall
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2, 3]
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      # With the change, `vp install` no longer runs the ui-templates build as a
+      # workspace postinstall; the root `prepare` script builds it after linking.
+      # Read this step's log: find the ui-templates "built in X" line and the
+      # "Done in Xs" install line — the gap between them is the deferred build tail.
+      - uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
+        with:
+          node-version: 22
+          cache: true
+
+      - name: Correctness — dist artifact exists after install
+        shell: pwsh
+        run: |
+          $f = "packages/ui-templates/dist/templates/loading.ts"
+          if (Test-Path $f) { Write-Host "OK: $f present" }
+          else { Write-Host "FAIL: $f missing after install"; exit 1 }
+
+      - name: Correctness — dev:prepare consumes ui-templates dist
+        shell: pwsh
+        run: vp run dev:prepare
+
+      # Reference: the same build in full isolation on this runner (should match
+      # the deferred build if the deferral worked).
+      - name: Reference — isolated vite build
+        continue-on-error: true
+        shell: pwsh
+        working-directory: packages/ui-templates
+        run: |
+          $t = Measure-Command { vp exec vite build 2>&1 | Write-Host }
+          Write-Host "== ISOLATED vite build wall: $([math]::Round($t.TotalSeconds,2))s =="
