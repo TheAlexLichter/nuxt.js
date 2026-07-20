@@ -1,8 +1,9 @@
 name: diagnose-templates-stall
 
-# Throwaway diagnostic (do not merge). Attributes the ~37s that the
-# `@nuxt/ui-templates` postinstall (`vite build`) spends on Windows *after* the
-# build reports "built in ~1.4s". Run it on a fork; delete when done.
+# Throwaway diagnostic (do not merge). De-confounds the ~5-37s tail the
+# @nuxt/ui-templates postinstall spends after `vite build` on Windows.
+# Varies one axis at a time, all post-install: CLI vs API, RTP on vs off,
+# across a 3-runner matrix for variance. Run on a fork; delete when done.
 
 on:
   push:
@@ -17,41 +18,81 @@ jobs:
   windows:
     runs-on: windows-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2, 3]
 
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
-      # setup-vp's default run-install runs the full monorepo install, including the
-      # `@nuxt/ui-templates` postinstall. Its own step timing in the log is baseline #1
-      # (the stall as it happens in real CI).
+      # setup-vp's full install runs the ui-templates postinstall under concurrent
+      # install load. Its "built in X" -> "Done" gap in this step's log is the
+      # in-contention baseline for this runner.
       - uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
         with:
           node-version: 22
           cache: true
 
-      - name: Defender / AV status
+      - name: AV / RTP status (baseline)
         shell: pwsh
-        run: |
-          Get-MpComputerStatus | Select-Object RealTimeProtectionEnabled, AntivirusEnabled, OnAccessProtectionEnabled | Format-List
+        run: Get-MpComputerStatus | Select-Object RealTimeProtectionEnabled, AntivirusEnabled, OnAccessProtectionEnabled | Format-List
 
-      - name: Probe — active handles + exit lag (Defender ON)
+      # ---- Axis 1: CLI vs API, isolated (no install contention) ----
+      - name: Isolated — vite CLI build (RTP as-is)
+        continue-on-error: true
         shell: pwsh
+        working-directory: packages/ui-templates
         run: |
-          $t = Measure-Command { node scripts/diagnose-templates-build.mjs 2>&1 | Write-Host }
-          Write-Host "== node harness total wall time (Defender ON): $([math]::Round($t.TotalSeconds, 2))s =="
+          $t = Measure-Command { vp exec vite build 2>&1 | Write-Host }
+          Write-Host "== ISOLATED vite CLI wall (RTP as-is): $([math]::Round($t.TotalSeconds,2))s (exit $LASTEXITCODE) =="
 
-      - name: Probe — active handles + exit lag (Defender exclusion)
+      - name: Isolated — vite build() API (RTP as-is)
         continue-on-error: true
         shell: pwsh
         run: |
-          Write-Host "RealTimeProtection before:" (Get-MpComputerStatus).RealTimeProtectionEnabled
-          try {
-            Add-MpPreference -ExclusionPath "$PWD" -ExclusionProcess "node.exe" -ErrorAction Stop
-            Write-Host "Added Defender exclusions for $PWD and node.exe"
-          } catch {
-            Write-Host "Could not add Defender exclusion (needs admin / tamper protection): $_"
-          }
           $t = Measure-Command { node scripts/diagnose-templates-build.mjs 2>&1 | Write-Host }
-          Write-Host "== node harness total wall time (exclusion attempted): $([math]::Round($t.TotalSeconds, 2))s =="
+          Write-Host "== ISOLATED API wall (RTP as-is): $([math]::Round($t.TotalSeconds,2))s =="
+
+      # ---- Axis 2: force Real-Time Protection ON, re-measure ----
+      - name: Force RTP ON
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          try { Set-MpPreference -DisableRealtimeMonitoring $false -ErrorAction Stop; Write-Host "Set RTP on" }
+          catch { Write-Host "Could not toggle RTP (tamper protection / admin): $_" }
+          Write-Host "RTP now:" (Get-MpComputerStatus).RealTimeProtectionEnabled
+
+      - name: Isolated — vite CLI build (RTP forced ON)
+        continue-on-error: true
+        shell: pwsh
+        working-directory: packages/ui-templates
+        run: |
+          $t = Measure-Command { vp exec vite build 2>&1 | Write-Host }
+          Write-Host "== RTP-ON vite CLI wall: $([math]::Round($t.TotalSeconds,2))s (exit $LASTEXITCODE) =="
+
+      - name: Isolated — vite build() API (RTP forced ON)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $t = Measure-Command { node scripts/diagnose-templates-build.mjs 2>&1 | Write-Host }
+          Write-Host "== RTP-ON API wall: $([math]::Round($t.TotalSeconds,2))s =="
+
+      # ---- Axis 2 control: force RTP OFF, re-measure ----
+      - name: Force RTP OFF
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          try { Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction Stop; Write-Host "Set RTP off" }
+          catch { Write-Host "Could not toggle RTP: $_" }
+          Write-Host "RTP now:" (Get-MpComputerStatus).RealTimeProtectionEnabled
+
+      - name: Isolated — vite CLI build (RTP forced OFF)
+        continue-on-error: true
+        shell: pwsh
+        working-directory: packages/ui-templates
+        run: |
+          $t = Measure-Command { vp exec vite build 2>&1 | Write-Host }
+          Write-Host "== RTP-OFF vite CLI wall: $([math]::Round($t.TotalSeconds,2))s (exit $LASTEXITCODE) =="
