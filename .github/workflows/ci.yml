@@ -401,7 +401,8 @@ jobs:
     timeout-minutes: 45
 
     env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/pw-browsers
+      # `runner` is not available in job-level `env`, so anchor on `github`
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.pw-browsers
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -415,7 +416,7 @@ jobs:
       - name: Cache Playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ${{ runner.temp }}/pw-browsers
+          path: ${{ github.workspace }}/.pw-browsers
           key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Playwright
@@ -442,19 +443,21 @@ jobs:
   # fixture matrix but never to a CI job, so they only ran locally. Kept to the
   # merge queue and deliberately absent from `ci-ok`: nitro keeps `RunnerManager`
   # in process-global state and returns 503s under concurrency (see
-  # `fileParallelism: false` in vitest.config.ts), so results should be visible
-  # without blocking merges while the feature is experimental.
+  # `fileParallelism: false` in vitest.config.ts), so a failure should be visible
+  # as a red job without blocking merges. Absence from `ci-ok` is what makes it
+  # non-blocking; `continue-on-error` is deliberately not used, as it would
+  # report the job as successful and hide the failure.
   test-fixtures-experimental:
     needs: changes
     if: needs.changes.outputs.src == 'true' && github.event_name == 'merge_group'
     runs-on: ubuntu-24.04-arm
-    continue-on-error: true
     timeout-minutes: 45
     permissions:
       contents: read
 
     env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/pw-browsers
+      # `runner` is not available in job-level `env`, so anchor on `github`
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.pw-browsers
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -468,7 +471,7 @@ jobs:
       - name: Cache Playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ${{ runner.temp }}/pw-browsers
+          path: ${{ github.workspace }}/.pw-browsers
           key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Playwright
@@ -511,7 +514,8 @@ jobs:
     timeout-minutes: 25
 
     env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/pw-browsers
+      # `runner` is not available in job-level `env`, so anchor on `github`
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.pw-browsers
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -525,7 +529,7 @@ jobs:
       - name: Cache Playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ${{ runner.temp }}/pw-browsers
+          path: ${{ github.workspace }}/.pw-browsers
           key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Playwright
