@@ -16,6 +16,10 @@ function normalizeFsKey (item) {
   return `${prefix}-${hash}`
 }
 
+// Windows rejects a rename while the destination is still open elsewhere,
+// which concurrent renders of the same island routinely are.
+const RETRYABLE_RENAME_CODES = new Set(['EPERM', 'EACCES', 'EBUSY'])
+
 /**
  * Write `value` to `path` atomically so a concurrent reader never observes a
  * truncated file: the payload is written to a unique sibling and renamed over
@@ -28,7 +32,18 @@ async function atomicWrite (path, value) {
   const tmp = `${path}.${crypto.randomBytes(8).toString('hex')}.tmp`
   try {
     await writeFile(tmp, value, 'utf8')
-    await rename(tmp, path)
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await rename(tmp, path)
+        return
+      } catch (error) {
+        const code = /** @type {NodeJS.ErrnoException} */ (error).code
+        if (attempt >= 4 || !code || !RETRYABLE_RENAME_CODES.has(code)) {
+          throw error
+        }
+        await new Promise(resolve => setTimeout(resolve, 10 * (attempt + 1)))
+      }
+    }
   } catch (error) {
     await unlink(tmp).catch(() => {})
     throw error
@@ -47,7 +62,10 @@ export default function cacheDriver (opts) {
   return {
     ...fs, // fall back to file system - only the bottom three methods are used in renderer
     async setItem (key, value, opts) {
-      await atomicWrite(join(base, normalizeFsKey(key)), value)
+      // a failed cache write must not fail the render that produced the value
+      await atomicWrite(join(base, normalizeFsKey(key)), value).catch((error) => {
+        console.warn(`[nuxt] could not cache \`${key}\`:`, error)
+      })
       await lru.setItem?.(key, value, opts)
     },
     async hasItem (key, opts) {

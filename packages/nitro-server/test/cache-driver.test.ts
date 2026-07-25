@@ -3,7 +3,21 @@ import { mkdtemp, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import cacheDriver from '../src/runtime/utils/cache-driver.mjs'
+
+const { renameHook } = vi.hoisted(() => ({
+  renameHook: { impl: null as null | ((from: string, to: string) => Promise<unknown>) },
+}))
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>()
+  return {
+    ...actual,
+    default: actual,
+    rename: (from: string, to: string) => renameHook.impl ? renameHook.impl(from, to) : actual.rename(from, to),
+  }
+})
+
+const cacheDriver = (await import('../src/runtime/utils/cache-driver.mjs')).default
 
 describe('cache-driver', () => {
   let base: string
@@ -13,6 +27,7 @@ describe('cache-driver', () => {
   })
 
   afterEach(async () => {
+    renameHook.impl = null
     await rm(base, { recursive: true, force: true })
   })
 
@@ -36,6 +51,40 @@ describe('cache-driver', () => {
 
     const reader = cacheDriver({ base })
     expect(await reader.getItem('/_payload.json', {})).toBe('updated')
+  })
+
+  it('retries a rename that Windows rejects while the entry is still open', async () => {
+    let attempts = 0
+    renameHook.impl = (from, to) => {
+      if (++attempts <= 2) {
+        return Promise.reject(Object.assign(new Error('EPERM: operation not permitted, rename'), { code: 'EPERM' }))
+      }
+      renameHook.impl = null
+      return fsp.rename(from, to)
+    }
+
+    const driver = cacheDriver({ base })
+    await driver.setItem!('/_payload.json', 'payload', {})
+
+    expect(attempts).toBe(3)
+    expect(await cacheDriver({ base }).getItem('/_payload.json', {})).toBe('payload')
+    const files = await readdir(base)
+    expect(files.some(file => file.endsWith('.tmp'))).toBe(false)
+  })
+
+  it('keeps rendering when the cache entry cannot be written at all', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    renameHook.impl = () => Promise.reject(Object.assign(new Error('EPERM: operation not permitted, rename'), { code: 'EPERM' }))
+
+    const driver = cacheDriver({ base })
+    await expect(driver.setItem!('/_payload.json', 'payload', {})).resolves.toBeUndefined()
+    expect(await driver.getItem('/_payload.json', {})).toBe('payload')
+    expect(warn).toHaveBeenCalledOnce()
+
+    renameHook.impl = null
+    vi.restoreAllMocks()
+    const files = await readdir(base)
+    expect(files.some(file => file.endsWith('.tmp'))).toBe(false)
   })
 
   it('never exposes a partially written payload to concurrent readers', async () => {
