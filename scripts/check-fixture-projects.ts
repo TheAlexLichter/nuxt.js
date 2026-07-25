@@ -5,6 +5,13 @@
  *
  * This fails if any project in `test/fixture-projects.ts` is not matched by at
  * least one `--project` pattern in `.github/workflows/ci.yml`.
+ *
+ * Two things it deliberately does not do:
+ * - it only reads double-quoted `--project "..."` patterns, so a job written
+ *   with single quotes reads as no coverage and fails here rather than passing
+ *   silently — keep the double-quoted form when adding jobs;
+ * - it ignores when a job runs. A project selected only by a merge-queue job
+ *   counts as covered, even though it does not run on pull requests.
  */
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -35,4 +42,4 @@ if (uncovered.length) {
   process.exit(1)
 }
 
-consola.success(`All ${fixtureMatrix.length} fixture projects are selected by ci.yml.`)
+consola.success(`All ${fixtureMatrix.length} fixture projects are selected by at least one job in ci.yml (some of which only run in the merge queue).`)
