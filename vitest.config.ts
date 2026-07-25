@@ -7,6 +7,8 @@ import { getV8Flags } from '@codspeed/core'
 import codspeedPlugin from '@codspeed/vitest-plugin'
 import type { NuxtConfig } from 'nuxt/schema'
 import { defu } from 'defu'
+import { fixtureMatrix, fixtureProjectName } from './test/fixture-projects'
+import type { FixtureMatrixEntry } from './test/fixture-projects'
 
 const commonSettings: NuxtConfig = {
   pages: true,
@@ -41,41 +43,8 @@ const nuxtTestProjects: Record<string, NuxtConfig> = {
   },
 }
 
-// Matrix combinations for fixture tests (matches CI matrix with exclusions)
-interface FixtureMatrixEntry {
-  env: 'dev' | 'built'
-  builder: 'vite' | 'rspack' | 'webpack' | 'nitro-vite'
-  context: 'async' | 'default'
-  manifest: 'manifest-on' | 'manifest-off'
-}
-
-const fixtureMatrix: FixtureMatrixEntry[] = [
-  // vite: all combinations
-  { env: 'dev', builder: 'vite', context: 'async', manifest: 'manifest-on' },
-  { env: 'dev', builder: 'vite', context: 'async', manifest: 'manifest-off' },
-  { env: 'dev', builder: 'vite', context: 'default', manifest: 'manifest-on' },
-  { env: 'dev', builder: 'vite', context: 'default', manifest: 'manifest-off' },
-  { env: 'built', builder: 'vite', context: 'async', manifest: 'manifest-on' },
-  { env: 'built', builder: 'vite', context: 'async', manifest: 'manifest-off' },
-  { env: 'built', builder: 'vite', context: 'default', manifest: 'manifest-on' },
-  { env: 'built', builder: 'vite', context: 'default', manifest: 'manifest-off' },
-  // nitro-vite: only default context + manifest-on
-  { env: 'dev', builder: 'nitro-vite', context: 'default', manifest: 'manifest-on' },
-  { env: 'built', builder: 'nitro-vite', context: 'default', manifest: 'manifest-on' },
-  // rspack: only manifest-on
-  { env: 'dev', builder: 'rspack', context: 'async', manifest: 'manifest-on' },
-  { env: 'built', builder: 'rspack', context: 'async', manifest: 'manifest-on' },
-  { env: 'built', builder: 'rspack', context: 'default', manifest: 'manifest-on' },
-  // webpack: only manifest-on
-  { env: 'dev', builder: 'webpack', context: 'async', manifest: 'manifest-on' },
-  { env: 'built', builder: 'webpack', context: 'async', manifest: 'manifest-on' },
-  { env: 'built', builder: 'webpack', context: 'default', manifest: 'manifest-on' },
-]
-
-function fixtureProjectName (entry: FixtureMatrixEntry) {
-  return `fixtures:${entry.builder}-${entry.env}-${entry.context}-${entry.manifest}`
-}
-
+// Matrix combinations for fixture tests live in `test/fixture-projects.ts` so
+// `scripts/check-fixture-projects.ts` can verify CI selects every project.
 function fixtureProjectEnv (entry: FixtureMatrixEntry) {
   return {
     TEST_ENV: entry.env,

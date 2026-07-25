@@ -17,6 +17,7 @@
     "lint:fix": "eslint . --cache --fix",
     "lint:docs": "markdownlint --ignore-path=.gitignore ./docs && case-police 'docs/**/*.md' *.md && eslint docs --cache",
     "lint:docs:fix": "markdownlint --ignore-path=.gitignore ./docs --fix && case-police 'docs/**/*.md' *.md --fix && eslint docs --cache --fix",
+    "lint:fixture-projects": "node ./scripts/check-fixture-projects.ts",
     "lint:knip": "knip",
     "lint:knip:production": "knip --production",
     "play": "nuxt dev playground",

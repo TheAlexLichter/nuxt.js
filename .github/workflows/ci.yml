@@ -96,6 +96,9 @@ jobs:
           node-version: lts
           cache: true
 
+      - name: Check every fixture project is selected by a job
+        run: vp run lint:fixture-projects
+
       - name: Typecheck
         run: vp run typecheck
 
@@ -445,6 +448,50 @@ jobs:
         run: gh run cancel ${{ github.run_id }} --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ github.token }}
+
+  # Experimental `nitro/vite` builder (#35604). Its projects were added to the
+  # fixture matrix but never to a CI job, so they only ran locally. Kept to the
+  # merge queue and deliberately absent from `ci-ok`: nitro keeps `RunnerManager`
+  # in process-global state and returns 503s under concurrency (see
+  # `fileParallelism: false` in vitest.config.ts), so a failure should be visible
+  # as a red job without blocking merges. Absence from `ci-ok` is what makes it
+  # non-blocking; `continue-on-error` is deliberately not used, as it would
+  # report the job as successful and hide the failure.
+  test-fixtures-experimental:
+    needs: changes
+    if: needs.changes.outputs.src == 'true' && github.event_name == 'merge_group'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    permissions:
+      contents: read
+
+    env:
+      # `runner` is not available in job-level `env`, so anchor on `github`
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.pw-browsers
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
+        with:
+          node-version: 22
+          cache: true
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ github.workspace }}/.pw-browsers
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ needs.changes.outputs.playwright }}
+
+      - name: Install Playwright
+        run: vp exec playwright-core install chromium
+
+      - name: Prepare test fixtures
+        run: vp run test:prepare
+
+      - name: Test (fixtures)
+        run: vp exec vitest run --project "fixtures:nitro-vite-*"
 
   test-e2e:
     # skip on push to main (already tested in merge queue) but run on push to maintenance branches
