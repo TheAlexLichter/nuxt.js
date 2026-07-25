@@ -375,17 +375,30 @@ jobs:
     strategy:
       fail-fast: ${{ github.event_name == 'merge_group' }}
       matrix:
+        # One leg per builder/env group. Grouping more projects per leg puts a
+        # single ~11m job on the critical path while other jobs idle; each
+        # project builds the fixture in `setup()`, so cost scales with the
+        # number of projects, not the number of test files.
         include:
           - os: ubuntu-24.04-arm
-            projects: '--project "fixtures:vite-dev-*" --project "fixtures:rspack-*"'
+            projects: '--project "fixtures:vite-dev-*"'
           - os: ubuntu-24.04-arm
-            projects: '--project "fixtures:vite-built-*" --project "fixtures:webpack-*"'
+            projects: '--project "fixtures:vite-built-async-*"'
+          - os: ubuntu-24.04-arm
+            projects: '--project "fixtures:vite-built-default-*"'
+          - os: ubuntu-24.04-arm
+            projects: '--project "fixtures:rspack-*"'
+          - os: ubuntu-24.04-arm
+            projects: '--project "fixtures:webpack-*"'
           - os: windows-latest
             projects: '--project "fixtures:vite-dev-*"'
           - os: windows-latest
             projects: '--project "fixtures:vite-built-*"'
 
     timeout-minutes: 45
+
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/pw-browsers
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -395,6 +408,12 @@ jobs:
         with:
           node-version: 22
           cache: true
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/pw-browsers
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Playwright
         run: vp exec playwright-core install chromium
@@ -428,15 +447,26 @@ jobs:
     strategy:
       fail-fast: ${{ github.event_name == 'merge_group' }}
       matrix:
+        # Each e2e spec builds its own fixture, so wall clock scales with specs
+        # per shard. Windows builds are the slowest, hence the finer split.
         include:
           - os: ubuntu-24.04-arm
-            shard: ''
-          - os: windows-latest
             shard: '--shard=1/2'
-          - os: windows-latest
+          - os: ubuntu-24.04-arm
             shard: '--shard=2/2'
+          - os: windows-latest
+            shard: '--shard=1/4'
+          - os: windows-latest
+            shard: '--shard=2/4'
+          - os: windows-latest
+            shard: '--shard=3/4'
+          - os: windows-latest
+            shard: '--shard=4/4'
 
     timeout-minutes: 25
+
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/pw-browsers
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -446,6 +476,12 @@ jobs:
         with:
           node-version: 22
           cache: true
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/pw-browsers
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Playwright
         run: vp exec playwright-core install chromium
