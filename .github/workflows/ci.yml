@@ -364,7 +364,11 @@ jobs:
       - uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
         with:
           node-version: lts
-          cache: true
+          # This is the only job that installs dependencies on x64 linux, and
+          # caching them costs ~2.6 GB of the repository's 10 GB cache budget —
+          # a quarter of it, evicting caches that every other job relies on.
+          # A cold install costs this ~8m job around 40s.
+          cache: false
 
       - name: Prepare test fixtures
         run: vp run test:prepare
