@@ -405,8 +405,14 @@ jobs:
             projects: '--project "fixtures:vite-built-default-*"'
           - os: ubuntu-24.04-arm
             projects: '--project "fixtures:rspack-*"'
+          # webpack projects cost ~3x a vite project (~185s vs ~80s), so this
+          # group is split per project rather than per env
           - os: ubuntu-24.04-arm
-            projects: '--project "fixtures:webpack-*"'
+            projects: '--project "fixtures:webpack-dev-*"'
+          - os: ubuntu-24.04-arm
+            projects: '--project "fixtures:webpack-built-async-*"'
+          - os: ubuntu-24.04-arm
+            projects: '--project "fixtures:webpack-built-default-*"'
           - os: windows-latest
             projects: '--project "fixtures:vite-dev-*"'
           - os: windows-latest
