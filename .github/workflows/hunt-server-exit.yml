@@ -1,0 +1,63 @@
+# TEMPORARY — do not merge.
+# `Server process exited before becoming ready (exit code: 0)` is the top Windows
+# failure (6 of 8 post-merge) and only happens on Windows CI. 4.0.3 spawns the
+# server with stdio: "inherit", so the child's output never reaches the log and
+# every occurrence so far has been unexplained. The patch in patches/ pipes and
+# replays that output into the error; this runs the Windows legs enough times to
+# catch one.
+name: hunt-server-exit
+
+on:
+  push:
+    branches:
+      - ci/hunt-server-exit
+
+permissions: {}
+
+jobs:
+  hunt:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        attempt: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        leg:
+          - 'fixtures:vite-dev-*'
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
+        with:
+          node-version: 22
+          cache: true
+
+      - name: Install Playwright
+        run: vp exec playwright-core install chromium
+
+      - name: Prepare fixtures
+        run: vp run test:prepare
+
+      - name: Run ${{ matrix.leg }} (attempt ${{ matrix.attempt }})
+        shell: bash
+        run: vp exec vitest run --project "${{ matrix.leg }}" 2>&1 | tee run.log || true
+
+      - name: Report
+        shell: bash
+        run: |
+          hits=$(grep -ac 'exited before becoming' run.log || true)
+          {
+            echo "### ${{ matrix.leg }} attempt ${{ matrix.attempt }} — $([ "$hits" -eq 0 ] && echo 'CLEAN' || echo "SENTINEL_HIT x$hits")"
+            echo '```'
+            grep -aE 'Test Files |Tests  |Duration ' run.log | tail -3
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$hits" -gt 0 ]; then
+            # this block is the whole point: exit code, elapsed, and what the child printed
+            grep -a -A 45 'exited before becoming' run.log | head -60 >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::SENTINEL_HIT on ${{ matrix.leg }} attempt ${{ matrix.attempt }}"
+          fi
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

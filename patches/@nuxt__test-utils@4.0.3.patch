@@ -1,0 +1,65 @@
+diff --git a/dist/shared/test-utils.BrQgu3Ob.mjs b/dist/shared/test-utils.BrQgu3Ob.mjs
+index 852389bcad9ce5752f6c3dccbfe208f196c9463a..631ea9b7f90834599e14f000539abf8df95bf1eb 100644
+--- a/dist/shared/test-utils.BrQgu3Ob.mjs
++++ b/dist/shared/test-utils.BrQgu3Ob.mjs
+@@ -77,6 +77,8 @@ const globalFetch = globalThis.fetch || fetch$1;
+ async function startServer(options = {}) {
+   const ctx = useTestContext();
+   await stopServer();
++  ctx.__serverOutput = [];
++  ctx.__serverStartedAt = Date.now();
+   const host = "127.0.0.1";
+   const port = ctx.options.port || await getRandomPort(host);
+   ctx.url = `http://${host}:${port}/`;
+@@ -85,7 +87,7 @@ async function startServer(options = {}) {
+       throwOnError: true,
+       nodeOptions: {
+         cwd: ctx.nuxt.options.rootDir,
+-        stdio: "inherit",
++        stdio: "pipe",
+         env: {
+           ...process.env,
+           _PORT: String(port),
+@@ -106,7 +108,7 @@ async function startServer(options = {}) {
+       {
+         throwOnError: true,
+         nodeOptions: {
+-          stdio: "inherit",
++          stdio: "pipe",
+           env: {
+             ...process.env,
+             PORT: String(port),
+@@ -119,6 +121,17 @@ async function startServer(options = {}) {
+       }
+     );
+   }
++  (async () => {
++    try {
++      for await (const line of ctx.serverProcess) {
++        ctx.__serverOutput.push(line);
++        if (ctx.__serverOutput.length > 200) ctx.__serverOutput.shift();
++      }
++    } catch (error) {
++      ctx.__serverOutput.push(`<stream error> ${error}`);
++    }
++  })();
++
+   await waitForServer({ host, port, dev: ctx.options.dev });
+ }
+ async function waitForServer({ host, port, dev }) {
+@@ -130,7 +143,14 @@ async function waitForServer({ host, port, dev }) {
+   let lastError;
+   while (Date.now() < deadline) {
+     if (ctx.serverProcess && (ctx.serverProcess.killed || ctx.serverProcess.exitCode != null)) {
+-      throw new Error(`Server process exited before becoming ready (exit code: ${ctx.serverProcess.exitCode ?? "unknown"})`);
++      {
++        const elapsed = Date.now() - (ctx.__serverStartedAt ?? Date.now());
++        const output = (ctx.__serverOutput ?? []).slice(-40).join("\n") || "<the server process produced no output>";
++        throw new Error(
++          `Server process exited before becoming ready (exit code: ${ctx.serverProcess.exitCode ?? "unknown"}, killed: ${ctx.serverProcess.killed}, after ${elapsed}ms, dev: ${dev})\n`
++          + `--- last output from the server process ---\n${output}\n--- end ---`
++        );
++      }
+     }
+     try {
+       const res = await globalFetch(joinURL(ctx.url, baseURL), { signal: AbortSignal.timeout(1e4) });

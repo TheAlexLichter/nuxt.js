@@ -1,0 +1,68 @@
+2026-07-31	lint-monorepo
+2026-07-31	typecheck (windows-latest, bundler) ~ typecheck (ubuntu-24.04-arm, bundler) ~ build ~ ci-ok
+2026-07-31	test-fixtures (windows-latest, --project "fixtures:vite-built-*") ~ ci-ok
+2026-07-30	test-size ~ ci-ok
+2026-07-30	test-benchmark ~ test-size ~ test-fixtures (windows-latest, --project "fixtures:vite-dev-*") ~ ci-ok
+2026-07-30	test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-dev-*" --project "fixtures:rspack-*") ~ test-fixtures (windows-latest, --project "fixtures:vite-built-*") ~ test-fixtures (windows-latest, --project "fixtures:vite-dev-*") ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-built-*" --project "fixtures:webpack-bu... ~ ci-ok
+2026-07-30	build ~ ci-ok
+2026-07-30	test-fixtures (windows-latest, --project "fixtures:rspack-*" --project "fixtures:webpack-*" --pro... ~ test-fixtures (windows-latest, --project "fixtures:vite-built-*") ~ ci-ok
+2026-07-30	lint-and-test ~ ci-ok
+2026-07-30	build ~ ci-ok
+2026-07-30	lint-monorepo
+2026-07-30	test-size ~ test-benchmark ~ ci-ok
+2026-07-30	test-benchmark ~ test-size ~ ci-ok
+2026-07-30	test-fixtures (windows-latest, --project "fixtures:vite-built-*") ~ ci-ok
+2026-07-30	test-size ~ test-benchmark ~ ci-ok
+2026-07-30	test-size ~ test-benchmark ~ ci-ok
+2026-07-30	lint-monorepo
+2026-07-30	build ~ ci-ok
+2026-07-30	test-size ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-built-*" --project "fixtures:webpack-*"... ~ ci-ok
+2026-07-30	lint-monorepo
+2026-07-30	build ~ ci-ok
+2026-07-30	lint-monorepo
+2026-07-30	build ~ knip ~ ui-templates-generated ~ ci-ok
+2026-07-29	test-size ~ test-benchmark ~ ci-ok
+2026-07-29	knip ~ ci-ok
+2026-07-29	lint-monorepo
+2026-07-29	build ~ ci-ok
+2026-07-29	lint-monorepo
+2026-07-29	ui-templates-generated ~ knip ~ build ~ ci-ok
+2026-07-29	build ~ ci-ok
+2026-07-29	lint-monorepo
+2026-07-29	lint-monorepo
+2026-07-29	ui-templates-generated ~ knip ~ build ~ ci-ok
+2026-07-29	knip ~ build ~ ui-templates-generated ~ ci-ok
+2026-07-29	typecheck (windows-latest, bundler) ~ build ~ test-size ~ knip ~ test-benchmark ~ test-e2e (windows-latest, --shard=2/2) ~ typecheck (ubuntu-24.04-arm, bundler) ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-built-*" --project "fixtures:webpack-bu... ~ test-e2e (ubuntu-24.04-arm) ~ test-e2e (windows-latest, --shard=1/2) ~ test-fixtures (windows-latest, --project "fixtures:vite-dev-*") ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-dev-*" --project "fixtures:rspack-*") ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:webpack-dev-*") ~ test-fixtures (windows-latest, --project "fixtures:vite-built-*") ~ ci-ok
+2026-07-29	test-fixtures (windows-latest, --project "fixtures:rspack-*" --project "fixtures:webpack-*" --pro... ~ ci-ok
+2026-07-29	build ~ ui-templates-generated ~ knip ~ ci-ok
+2026-07-29	build ~ ui-templates-generated ~ knip ~ ci-ok
+2026-07-28	test-fixtures (windows-latest, --project "fixtures:vite-dev-*") ~ ci-ok
+2026-07-28	build ~ ui-templates-generated ~ knip ~ ci-ok
+2026-07-28	build ~ test-size ~ typecheck (ubuntu-24.04-arm, bundler) ~ ui-templates-generated ~ typecheck (windows-latest, bundler) ~ knip ~ test-benchmark ~ release-pkg-pr-new ~ test-e2e (windows-latest, --shard=2/2) ~ test-e2e (ubuntu-24.04-arm) ~ test-e2e (windows-latest, --shard=1/2) ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:webpack-dev-*") ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-built-*" --project "fixtures:webpack-bu... ~ test-fixtures (windows-latest, --project "fixtures:vite-built-*") ~ test-fixtures (windows-latest, --project "fixtures:vite-dev-*") ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-dev-*" --project "fixtures:rspack-*") ~ ci-ok
+2026-07-28	lint-monorepo
+2026-07-28	build ~ ci-ok
+2026-07-28	test-size ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-built-*" --project "fixtures:webpack-*"... ~ ci-ok
+2026-07-28	ui-templates-generated ~ knip ~ build ~ ci-ok
+2026-07-28	knip ~ typecheck (windows-latest, bundler) ~ ui-templates-generated ~ typecheck (ubuntu-24.04-arm, bundler) ~ test-size ~ build ~ release-pkg-pr-new ~ test-benchmark ~ test-e2e (ubuntu-24.04-arm) ~ test-fixtures (windows-latest, --project "fixtures:vite-built-*") ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:webpack-dev-*") ~ test-e2e (windows-latest, --shard=2/2) ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-dev-*" --project "fixtures:rspack-*") ~ test-e2e (windows-latest, --shard=1/2) ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-built-*" --project "fixtures:webpack-bu... ~ test-fixtures (windows-latest, --project "fixtures:vite-dev-*") ~ ci-ok
+2026-07-28	typecheck (windows-latest, bundler) ~ typecheck (ubuntu-24.04-arm, bundler) ~ ci-ok
+2026-07-28	test-benchmark
+2026-07-28	build ~ ui-templates-generated ~ knip ~ ci-ok
+2026-07-28	typecheck (windows-latest, bundler) ~ ui-templates-generated ~ test-benchmark ~ typecheck (ubuntu-24.04-arm, bundler) ~ knip ~ test-size ~ test-e2e (windows-latest, --shard=1/2) ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-dev-*" --project "fixtures:rspack-*") ~ test-e2e (windows-latest, --shard=2/2) ~ test-fixtures (windows-latest, --project "fixtures:vite-dev-*") ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-built-*" --project "fixtures:webpack-bu... ~ release-pkg-pr-new ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:webpack-dev-*") ~ test-e2e (ubuntu-24.04-arm) ~ test-fixtures (windows-latest, --project "fixtures:vite-built-*") ~ build ~ ci-ok
+2026-07-28	test-e2e (windows-latest, --shard=2/2) ~ knip ~ test-benchmark ~ typecheck (windows-latest, bundler) ~ ui-templates-generated ~ build ~ test-size ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-built-*" --project "fixtures:webpack-bu... ~ typecheck (ubuntu-24.04-arm, bundler) ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:webpack-dev-*") ~ test-fixtures (windows-latest, --project "fixtures:vite-dev-*") ~ test-e2e (windows-latest, --shard=1/2) ~ release-pkg-pr-new ~ test-fixtures (windows-latest, --project "fixtures:vite-built-*") ~ test-e2e (ubuntu-24.04-arm) ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-dev-*" --project "fixtures:rspack-*") ~ ci-ok
+2026-07-28	test-size ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-built-*" --project "fixtures:webpack-bu... ~ ci-ok
+2026-07-28	knip ~ ui-templates-generated ~ test-size ~ typecheck (ubuntu-24.04-arm, bundler) ~ release-pkg-pr-new ~ build ~ test-benchmark ~ typecheck (windows-latest, bundler) ~ test-e2e (windows-latest, --shard=1/2) ~ test-e2e (ubuntu-24.04-arm) ~ test-e2e (windows-latest, --shard=2/2) ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-dev-*" --project "fixtures:rspack-*") ~ test-fixtures (windows-latest, --project "fixtures:vite-dev-*") ~ test-fixtures (windows-latest, --project "fixtures:vite-built-*") ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-built-*" --project "fixtures:webpack-bu... ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:webpack-dev-*") ~ ci-ok
+2026-07-28	build ~ test-size ~ ci-ok
+2026-07-28	test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-dev-*" --project "fixtures:rspack-*") ~ ci-ok
+2026-07-28	typecheck (windows-latest, bundler) ~ test-benchmark ~ build ~ ui-templates-generated ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-built-*" --project "fixtures:webpack-bu... ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-dev-*" --project "fixtures:rspack-*") ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:webpack-dev-*") ~ knip ~ test-fixtures (windows-latest, --project "fixtures:vite-dev-*") ~ test-e2e (ubuntu-24.04-arm) ~ test-size ~ test-e2e (windows-latest, --shard=1/2) ~ release-pkg-pr-new ~ test-fixtures (windows-latest, --project "fixtures:vite-built-*") ~ typecheck (ubuntu-24.04-arm, bundler) ~ test-e2e (windows-latest, --shard=2/2) ~ ci-ok
+2026-07-28	test-size ~ build ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-dev-*" --project "fixtures:rspack-*") ~ ci-ok
+2026-07-28	lint-monorepo
+2026-07-28	build ~ ci-ok
+2026-07-28	ui-templates-generated ~ knip ~ build ~ ci-ok
+2026-07-28	typecheck (ubuntu-24.04-arm, bundler) ~ test-benchmark ~ knip ~ ui-templates-generated ~ test-fixtures (windows-latest, --project "fixtures:vite-dev-*") ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:webpack-dev-*") ~ release-pkg-pr-new ~ build ~ test-fixtures (windows-latest, --project "fixtures:vite-built-*") ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-dev-*" --project "fixtures:rspack-*") ~ typecheck (windows-latest, bundler) ~ test-e2e (windows-latest, --shard=1/2) ~ test-e2e (ubuntu-24.04-arm) ~ test-size ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-built-*" --project "fixtures:webpack-bu... ~ test-e2e (windows-latest, --shard=2/2) ~ ci-ok
+2026-07-28	lint-monorepo
+2026-07-28	build ~ ci-ok
+2026-07-28	ui-templates-generated ~ build ~ knip ~ ci-ok
+2026-07-28	build ~ test-size ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-dev-*" --project "fixtures:rspack-*") ~ ci-ok
+2026-07-28	knip ~ typecheck (windows-latest, bundler) ~ test-e2e (windows-latest, --shard=2/2) ~ typecheck (ubuntu-24.04-arm, bundler) ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:webpack-dev-*") ~ test-size ~ test-benchmark ~ build ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-dev-*" --project "fixtures:rspack-*") ~ ui-templates-generated ~ test-fixtures (windows-latest, --project "fixtures:vite-dev-*") ~ test-e2e (ubuntu-24.04-arm) ~ release-pkg-pr-new ~ test-fixtures (windows-latest, --project "fixtures:vite-built-*") ~ test-e2e (windows-latest, --shard=1/2) ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-built-*" --project "fixtures:webpack-bu... ~ ci-ok
+2026-07-28	build ~ test-size ~ ci-ok
+2026-07-28	ui-templates-generated ~ build ~ test-e2e (windows-latest, --shard=1/2) ~ knip ~ test-size ~ test-e2e (ubuntu-24.04-arm) ~ typecheck (windows-latest, bundler) ~ test-e2e (windows-latest, --shard=2/2) ~ release-pkg-pr-new ~ test-benchmark ~ typecheck (ubuntu-24.04-arm, bundler) ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:webpack-dev-*") ~ test-fixtures (windows-latest, --project "fixtures:vite-built-*") ~ test-fixtures (windows-latest, --project "fixtures:vite-dev-*") ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-dev-*" --project "fixtures:rspack-*") ~ test-fixtures (ubuntu-24.04-arm, --project "fixtures:vite-built-*" --project "fixtures:webpack-bu... ~ ci-ok
