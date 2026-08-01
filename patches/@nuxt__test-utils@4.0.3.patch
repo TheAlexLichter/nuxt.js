@@ -1,8 +1,14 @@
 diff --git a/dist/shared/test-utils.BrQgu3Ob.mjs b/dist/shared/test-utils.BrQgu3Ob.mjs
-index 852389bcad9ce5752f6c3dccbfe208f196c9463a..631ea9b7f90834599e14f000539abf8df95bf1eb 100644
+index 852389bcad9ce5752f6c3dccbfe208f196c9463a..2e2d71d3e2bed6640882759af5b896abfedf62ff 100644
 --- a/dist/shared/test-utils.BrQgu3Ob.mjs
 +++ b/dist/shared/test-utils.BrQgu3Ob.mjs
-@@ -77,6 +77,8 @@ const globalFetch = globalThis.fetch || fetch$1;
+@@ -1,4 +1,5 @@
+ import { x } from 'tinyexec';
++import { spawn as __spawn } from 'node:child_process';
+ import { getRandomPort, waitForPort } from 'get-port-please';
+ import { createFetch, fetch as fetch$1 } from 'ofetch';
+ import { resolve as resolve$1 } from 'pathe';
+@@ -77,6 +78,8 @@ const globalFetch = globalThis.fetch || fetch$1;
  async function startServer(options = {}) {
    const ctx = useTestContext();
    await stopServer();
@@ -11,7 +17,7 @@ index 852389bcad9ce5752f6c3dccbfe208f196c9463a..631ea9b7f90834599e14f000539abf8d
    const host = "127.0.0.1";
    const port = ctx.options.port || await getRandomPort(host);
    ctx.url = `http://${host}:${port}/`;
-@@ -85,7 +87,7 @@ async function startServer(options = {}) {
+@@ -85,7 +88,7 @@ async function startServer(options = {}) {
        throwOnError: true,
        nodeOptions: {
          cwd: ctx.nuxt.options.rootDir,
@@ -20,7 +26,7 @@ index 852389bcad9ce5752f6c3dccbfe208f196c9463a..631ea9b7f90834599e14f000539abf8d
          env: {
            ...process.env,
            _PORT: String(port),
-@@ -106,7 +108,7 @@ async function startServer(options = {}) {
+@@ -106,7 +109,7 @@ async function startServer(options = {}) {
        {
          throwOnError: true,
          nodeOptions: {
@@ -29,7 +35,7 @@ index 852389bcad9ce5752f6c3dccbfe208f196c9463a..631ea9b7f90834599e14f000539abf8d
            env: {
              ...process.env,
              PORT: String(port),
-@@ -119,6 +121,17 @@ async function startServer(options = {}) {
+@@ -119,6 +122,17 @@ async function startServer(options = {}) {
        }
      );
    }
@@ -47,7 +53,7 @@ index 852389bcad9ce5752f6c3dccbfe208f196c9463a..631ea9b7f90834599e14f000539abf8d
    await waitForServer({ host, port, dev: ctx.options.dev });
  }
  async function waitForServer({ host, port, dev }) {
-@@ -130,7 +143,14 @@ async function waitForServer({ host, port, dev }) {
+@@ -130,7 +144,14 @@ async function waitForServer({ host, port, dev }) {
    let lastError;
    while (Date.now() < deadline) {
      if (ctx.serverProcess && (ctx.serverProcess.killed || ctx.serverProcess.exitCode != null)) {
@@ -63,3 +69,36 @@ index 852389bcad9ce5752f6c3dccbfe208f196c9463a..631ea9b7f90834599e14f000539abf8d
      }
      try {
        const res = await globalFetch(joinURL(ctx.url, baseURL), { signal: AbortSignal.timeout(1e4) });
+@@ -160,6 +181,32 @@ async function stopServer() {
+   }, () => {
+   });
+   const sleep = (ms) => new Promise((resolve2) => setTimeout(resolve2, ms));
++  // Windows has no process groups, so killing the handle we spawned leaves the
++  // server and anything it started running. Guarded on the process still being
++  // alive: a dead pid may already have been reused by an unrelated process.
++  if (process.platform === "win32" && proc.pid && proc.exitCode == null) {
++    const killedTree = await new Promise((resolve2) => {
++      let settled = false;
++      const done = (ok) => {
++        if (!settled) {
++          settled = true;
++          resolve2(ok);
++        }
++      };
++      try {
++        const killer = __spawn("taskkill", ["/pid", String(proc.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
++        killer.on("exit", (code) => done(code === 0));
++        killer.on("error", () => done(false));
++      } catch {
++        done(false);
++      }
++      sleep(5e3).then(() => done(false));
++    });
++    if (killedTree) {
++      await Promise.race([exited, sleep(5e3)]);
++      return;
++    }
++  }
+   proc.kill();
+   await Promise.race([exited, sleep(5e3)]);
+   if (proc.exitCode == null) {

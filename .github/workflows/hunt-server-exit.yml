@@ -1,10 +1,9 @@
 # TEMPORARY — do not merge.
-# `Server process exited before becoming ready (exit code: 0)` is the top Windows
-# failure (6 of 8 post-merge) and only happens on Windows CI. 4.0.3 spawns the
-# server with stdio: "inherit", so the child's output never reaches the log and
-# every occurrence so far has been unexplained. The patch in patches/ pipes and
-# replays that output into the error; this runs the Windows legs enough times to
-# catch one.
+# Upstream Windows dev-fixture jobs leave ~22 processes behind ("Terminate orphan
+# process" at cleanup): killing the spawned handle does not kill the tree on
+# Windows. patches/ adds a `taskkill /T` to stopServer; this checks whether the
+# orphans disappear. It also keeps the server-output capture, so a `server exited
+# before becoming ready` here would explain itself.
 name: hunt-server-exit
 
 on:
@@ -17,15 +16,13 @@ permissions: {}
 jobs:
   hunt:
     runs-on: windows-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
-        attempt: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        leg:
-          - 'fixtures:vite-dev-*'
+        attempt: [1, 2, 3]
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -42,22 +39,31 @@ jobs:
       - name: Prepare fixtures
         run: vp run test:prepare
 
-      - name: Run ${{ matrix.leg }} (attempt ${{ matrix.attempt }})
+      # no shell pipeline here: orphaned dev servers hold a pipe open and the
+      # step never returns
+      - name: Run dev fixtures (attempt ${{ matrix.attempt }})
         shell: bash
-        run: vp exec vitest run --project "${{ matrix.leg }}" 2>&1 | tee run.log || true
+        run: vp exec vitest run --project "fixtures:vite-dev-*" > run.log 2>&1 || true
 
       - name: Report
         shell: bash
         run: |
           hits=$(grep -ac 'exited before becoming' run.log || true)
           {
-            echo "### ${{ matrix.leg }} attempt ${{ matrix.attempt }} — $([ "$hits" -eq 0 ] && echo 'CLEAN' || echo "SENTINEL_HIT x$hits")"
+            echo "### attempt ${{ matrix.attempt }}"
             echo '```'
             grep -aE 'Test Files |Tests  |Duration ' run.log | tail -3
+            echo "server-exit hits: $hits"
           } >> "$GITHUB_STEP_SUMMARY"
           if [ "$hits" -gt 0 ]; then
-            # this block is the whole point: exit code, elapsed, and what the child printed
             grep -a -A 45 'exited before becoming' run.log | head -60 >> "$GITHUB_STEP_SUMMARY"
-            echo "::warning::SENTINEL_HIT on ${{ matrix.leg }} attempt ${{ matrix.attempt }}"
+            echo "::warning::server-exit reproduced on attempt ${{ matrix.attempt }}"
           fi
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      # any node processes still alive here are what the runner would report as orphans
+      - name: Leftover processes (the thing under test)
+        shell: bash
+        run: |
+          left=$(tasklist //FI "IMAGENAME eq node.exe" | grep -c "node.exe" || true)
+          echo "node.exe still running after the suite: $left" | tee -a "$GITHUB_STEP_SUMMARY"
