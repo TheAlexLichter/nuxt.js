@@ -9,6 +9,7 @@ packages:
   - test/fixtures/*/_local-modules/*
 
 patchedDependencies:
+  '@nuxt/test-utils@4.0.3': patches/@nuxt__test-utils@4.0.3.patch
   changelogen: patches/changelogen.patch
   nitro@3.0.260610-beta: patches/nitro@3.0.260610-beta.patch
 
